@@ -1,0 +1,21 @@
+{
+    "name": "michalhepner/phar-compiler",
+    "type": "library",
+    "license": "AGPL-3.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "MichalHepner\\PharCompiler\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Michał Hepner",
+            "email": "michal.hepner@gmail.com"
+        }
+    ],
+    "require": {
+        "symfony/filesystem": "^6.1",
+        "symfony/finder": "^6.1",
+        "psr/log": "^3.0"
+    }
+}
