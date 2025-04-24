@@ -14,8 +14,8 @@
         }
     ],
     "require": {
-        "symfony/filesystem": "^6.1",
-        "symfony/finder": "^6.1",
+        "symfony/filesystem": ">= 6.1",
+        "symfony/finder": ">= 6.1",
         "psr/log": "^3.0"
     }
 }
