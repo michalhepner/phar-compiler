@@ -50,13 +50,40 @@ class Compiler implements LoggerAwareInterface
 
         $phar = new Phar($this->targetPath, 0, $this->stub->getPackageName());
         $phar->setSignatureAlgorithm(Phar::SHA512);
-        $phar->startBuffering();
 
         $files = $this->files;
         // This improves performance greatly.
         uasort($files, fn (File $a, File $b) => $a->getSize() - $b->getSize());
 
+        $tmpDir = sys_get_temp_dir() . '/phar-compiler-' . uniqid();
+        $this->filesystem->mkdir($tmpDir);
+        register_shutdown_function(function () use ($tmpDir) {
+            $this->filesystem->remove($tmpDir);
+        });
+
+        $filesToAddDirectly = [];
+        $filesToProcess = [];
         foreach ($files as $file) {
+            foreach ($this->fileTransformers as $fileTransformer) {
+                if ($fileTransformer->shouldTransform($file)) {
+                    $this->logger->debug(sprintf("File %s will be transformed by %s", $file->getTargetPath(), get_class($fileTransformer)));
+                    $filesToProcess[] = $file;
+                    continue 2;
+                }
+            }
+
+            $filesToAddDirectly[] = $file;
+            $this->logger->debug(sprintf("Copying file %s to temporary directory", $file->getTargetPath()));
+            $this->filesystem->copy($file->getSourcePath(), $tmpDir . \DIRECTORY_SEPARATOR . $file->getTargetPath());
+        }
+
+        if (count($filesToAddDirectly) > 0) {
+            $this->logger->debug(sprintf("Adding %d files directly from temporary directory", count($filesToAddDirectly)));
+            $phar->buildFromDirectory($tmpDir);
+        }
+
+        $phar->startBuffering();
+        foreach ($filesToProcess as $file) {
             $this->logger->debug(sprintf("Processing file %s", $file->getTargetPath()));
             $fileContents = $file->getContents();
 
